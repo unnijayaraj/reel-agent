@@ -2,25 +2,20 @@ import os
 import io
 import requests
 from urllib.parse import quote
+from datetime import date
 from dotenv import load_dotenv
 import anthropic
 from PIL import Image, ImageDraw, ImageFont
 from moviepy import ImageClip, concatenate_videoclips, vfx
+from topics import TOPICS
 
 load_dotenv()
 
-# ─────────────────────────────────────────
-#  YOUR WEEKLY STATS — edit this each week
-# ─────────────────────────────────────────
-STATS = {
-    "week": "June 16–22",
-    "followers_gained": 412,
-    "top_post_reach": 84000,
-    "top_post_topic": "AI tools for creators",
-    "reel_views": 210000,
-    "profile_visits": 3100,
-    "accounts_reached": 95000,
-}
+
+def get_todays_topic() -> str:
+    # Cycles through the topics list based on today's date — no repeats for 35 days
+    day_index = date.today().toordinal() % len(TOPICS)
+    return TOPICS[day_index]
 
 # ─────────────────────────────────────────
 #  SETTINGS
@@ -40,27 +35,22 @@ POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{prompt}?width=1080&hei
 # ─────────────────────────────────────────
 #  STEP 1 — Claude writes slide text + image prompts
 # ─────────────────────────────────────────
-def generate_slides(stats: dict):
-    print("Step 1: Asking Claude to write your slides + image prompts...")
+def generate_slides(topic: str):
+    print(f"Step 1: Writing slides for today's topic...")
+    print(f"  Topic: {topic}\n")
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     prompt = f"""
-You are a viral Instagram content writer for a creator who posts data-driven reels.
+You are a viral Instagram Reel writer for a content creator who teaches creators how to grow online.
 
-Here are this week's Instagram analytics:
-- Week: {stats['week']}
-- New followers: {stats['followers_gained']}
-- Top post reach: {stats['top_post_reach']:,} (topic: {stats['top_post_topic']})
-- Reel views: {stats['reel_views']:,}
-- Profile visits: {stats['profile_visits']:,}
-- Accounts reached: {stats['accounts_reached']:,}
+Today's topic: "{topic}"
 
-Write exactly 7 slides for an Instagram Reel. Each slide is short (max 8 words).
+Write exactly 7 slides for an Instagram Reel about this topic. Each slide is short (max 8 words).
 Use line breaks (\\n) to split long slides across 2 lines.
 
 For each slide also write a vivid background image prompt (describe a beautiful,
-atmospheric scene that matches the mood of the slide — no text, no people, just scenery/abstract).
+atmospheric scene that matches the mood — no text, no people, just scenery/abstract art).
 
 Format your response EXACTLY like this, nothing else:
 SLIDE 1: [text]
@@ -270,12 +260,14 @@ def push_to_github(video_path: str, caption: str):
 # ─────────────────────────────────────────
 #  PIPELINE — runs all 5 steps in order
 # ─────────────────────────────────────────
-def run_pipeline(stats: dict):
+def run_pipeline():
+    topic = get_todays_topic()
+
     print("=" * 45)
     print("   AI REEL PIPELINE STARTING")
     print("=" * 45 + "\n")
 
-    slides, image_prompts, caption = generate_slides(stats)   # Step 1
+    slides, image_prompts, caption = generate_slides(topic)   # Step 1
     backgrounds = generate_backgrounds(image_prompts)          # Step 2
     image_paths = render_slides(slides, backgrounds)           # Step 3
     video_path  = create_video(image_paths)                    # Step 4
@@ -289,4 +281,4 @@ def run_pipeline(stats: dict):
 
 
 if __name__ == "__main__":
-    run_pipeline(STATS)
+    run_pipeline()
