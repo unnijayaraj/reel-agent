@@ -1,7 +1,4 @@
 import os
-import io
-import requests
-from urllib.parse import quote
 from datetime import date
 from dotenv import load_dotenv
 import anthropic
@@ -29,7 +26,6 @@ FONT_PATH          = "/System/Library/Fonts/HelveticaNeue.ttc"
 TEXT_COLOR         = (255, 255, 255)
 ACCENT             = (180, 100, 255)
 
-POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{prompt}?width=1080&height=1920&model=flux&nologo=true"
 
 
 # ─────────────────────────────────────────
@@ -99,25 +95,31 @@ Make slide 1 a strong hook. Make slide 7 a follow CTA.
 # ─────────────────────────────────────────
 #  STEP 2 — Pollinations AI generates background images
 # ─────────────────────────────────────────
+
+# Color palettes for varied slide backgrounds (top RGB, bottom RGB)
+GRADIENT_PALETTES = [
+    ((10, 10, 40),  (60, 20, 90)),   # deep purple
+    ((5,  30, 60),  (10, 80, 120)),  # ocean blue
+    ((40, 10, 10),  (90, 30, 20)),   # deep red
+    ((10, 40, 20),  (20, 90, 50)),   # forest green
+    ((30, 10, 50),  (80, 30, 100)),  # violet
+    ((5,  40, 60),  (15, 100, 90)),  # teal
+    ((50, 20, 5),   (100, 60, 10)),  # amber
+]
+
+
+# ─────────────────────────────────────────
+#  STEP 2 — Generate gradient backgrounds with Pillow
+# ─────────────────────────────────────────
 def generate_backgrounds(image_prompts: list[str]) -> list[Image.Image]:
-    print("Step 2: Generating AI backgrounds with Pollinations (free)...")
+    print("Step 2: Generating gradient backgrounds with Pillow...")
 
     backgrounds = []
-
-    for i, prompt in enumerate(image_prompts):
-        print(f"  Generating image {i+1}/{len(image_prompts)}: {prompt[:60]}...")
-
-        url = POLLINATIONS_URL.format(prompt=quote(prompt))
-        response = requests.get(url, timeout=90)
-
-        if response.status_code == 200 and response.headers.get("content-type", "").startswith("image"):
-            img = Image.open(io.BytesIO(response.content)).convert("RGB")
-            img = _fill_portrait(img)
-            backgrounds.append(img)
-            print(f"    Done.")
-        else:
-            print(f"    Error {response.status_code} — using gradient fallback.")
-            backgrounds.append(_make_gradient_fallback())
+    for i, _ in enumerate(image_prompts):
+        palette = GRADIENT_PALETTES[i % len(GRADIENT_PALETTES)]
+        img = _make_gradient(palette[0], palette[1])
+        backgrounds.append(img)
+        print(f"  Slide {i+1}: gradient ready.")
 
     print()
     return backgrounds
@@ -138,15 +140,14 @@ def _fill_portrait(img: Image.Image) -> Image.Image:
     return img.crop((left, top, left + target_w, top + target_h))
 
 
-def _make_gradient_fallback() -> Image.Image:
-    """Dark purple gradient used if HF API fails for a slide."""
+def _make_gradient(top_color: tuple, bottom_color: tuple) -> Image.Image:
     img = Image.new("RGB", (WIDTH, HEIGHT))
     draw = ImageDraw.Draw(img)
     for y in range(HEIGHT):
         t = y / HEIGHT
-        r = int(15  + (40  - 15)  * t)
-        g = int(15  + (10  - 15)  * t)
-        b = int(30  + (60  - 30)  * t)
+        r = int(top_color[0] + (bottom_color[0] - top_color[0]) * t)
+        g = int(top_color[1] + (bottom_color[1] - top_color[1]) * t)
+        b = int(top_color[2] + (bottom_color[2] - top_color[2]) * t)
         draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
     return img
 
