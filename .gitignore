@@ -1,0 +1,4 @@
+venv/
+slides/
+test_image.png
+.env
