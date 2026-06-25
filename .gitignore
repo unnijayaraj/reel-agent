@@ -2,3 +2,4 @@ venv/
 slides/
 test_image.png
 .env
+__pycache__/
