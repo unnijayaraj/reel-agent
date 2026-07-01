@@ -22,7 +22,7 @@ OUTPUT_FILE        = "reel.mp4"
 WIDTH, HEIGHT      = 1080, 1920
 SECONDS_PER_SLIDE  = 2.5
 FPS                = 30
-FONT_PATH          = "/System/Library/Fonts/HelveticaNeue.ttc"
+FONT_PATH          = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 TEXT_COLOR         = (255, 255, 255)
 ACCENT             = (180, 100, 255)
 
